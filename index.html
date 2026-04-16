@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Matrix Drums FX Pro</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#050505">
+
+    <style>
+        :root { --bg: #050505; --pnl: #121215; --acc: #00ffcc; --sec: #ff0055; --txt: #eee; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Inter', sans-serif; }
+        body { background: var(--bg); color: var(--txt); margin: 0; padding: 10px; min-height: 100vh; overflow-y: auto; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; padding-bottom: 8px; margin-bottom: 12px; }
+        .section-title { font-size: 0.6rem; color: #555; margin: 15px 0 5px; font-weight: bold; text-transform: uppercase; }
+        .mixer { background: var(--pnl); border-radius: 12px; padding: 12px; margin-bottom: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border: 1px solid #222; }
+        .master-fx { background: #1a1a1f; border-radius: 12px; padding: 12px; margin-bottom: 12px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; border: 1px solid var(--acc); }
+        .knob { display: flex; flex-direction: column; font-size: 0.5rem; color: #666; text-transform: uppercase; font-weight: bold; }
+        input[type=range] { width: 100%; accent-color: var(--acc); height: 35px; }
+        input[type=range].master-range { accent-color: var(--sec); }
+        select { background: #111; color: var(--acc); border: 1px solid #333; padding: 5px; border-radius: 4px; font-size: 0.7rem; margin-top: 5px; }
+        .track-row { display: flex; align-items: center; gap: 4px; margin-bottom: 6px; }
+        .track-label { width: 70px; font-size: 0.55rem; background: #1a1a1f; padding: 12px 0; border-radius: 4px; text-align: center; color: #777; border: 1px solid #333; cursor: pointer; }
+        .track-label.selected { border-color: var(--acc); color: var(--acc); background: #00221e; }
+        .steps { display: flex; gap: 3px; flex: 1; }
+        .step { flex: 1; height: 38px; background: #111; border-radius: 3px; appearance: none; border: 1px solid #222; margin: 0; }
+        .step:checked { background: var(--sec); box-shadow: 0 0 10px var(--sec); border: none; }
+        .step.playing { border: 2.5px solid white !important; }
+        .mem-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+        .mem-btn { padding: 15px 0; font-size: 0.7rem; background: #111; border: 1px solid #333; color: #666; border-radius: 5px; cursor: pointer; }
+        .ptn-active, .patch-active { border-color: var(--acc); color: var(--acc); }
+        button#playBtn { width: 100%; padding: 25px; background: #000; border: 2px solid var(--acc); color: var(--acc); border-radius: 15px; font-size: 1.5rem; font-weight: 900; margin: 20px 0; text-transform: uppercase; }
+        button#playBtn.active { background: var(--sec); border-color: var(--sec); color: white; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div style="font-weight: 900;">MATRIX_<span style="color:var(--sec)">DRUMS_FX</span></div>
+        <div id="status" style="font-size: 0.6rem; color: var(--acc); font-weight: bold; letter-spacing: 1px;">MADE BY NORELESI</div>
+    </div>
+
+    <div class="section-title">Mixer: <span id="targetTrack" style="color:var(--acc)">KICK</span></div>
+    <div class="mixer">
+        <div class="knob"><label>VOL</label><input type="range" id="m_vol" min="0" max="2" step="0.05" value="1"></div>
+        <div class="knob"><label>PITCH</label><input type="range" id="m_pitch" min="0.1" max="2" step="0.01" value="1"></div>
+        <div class="knob"><label>REVERB (Track)</label><input type="range" id="m_rev" min="0" max="1" step="0.02" value="0"></div>
+        <div class="knob">
+            <label>DLY TIME</label>
+            <select id="m_dly_time">
+                <option value="4">1/4 Beat</option>
+                <option value="8">1/8 Beat</option>
+                <option value="16" selected>1/16 Beat</option>
+                <option value="32">1/32 Beat</option>
+            </select>
+        </div>
+        <div class="knob" style="grid-column: span 2;"><label>DELAY FEEDBACK</label><input type="range" id="m_dly" min="0" max="0.95" step="0.01" value="0"></div>
+        <button style="grid-column: span 2; background:var(--acc); border:none; padding:12px; border-radius:6px; font-weight:bold; font-size:0.7rem; color:#000; cursor:pointer;" onclick="document.getElementById('fileInput').click()">LOAD WAV</button>
+    </div>
+
+    <div class="section-title">Master FX</div>
+    <div class="master-fx">
+        <div class="knob"><label>CUTOFF</label><input type="range" id="fx_cutoff" class="master-range" min="0" max="1" step="0.01" value="1"></div>
+        <div class="knob"><label>BITCRUSH</label><input type="range" id="fx_crush" class="master-range" min="0" max="1" step="0.01" value="0"></div>
+        <div class="knob" style="grid-column: span 2;"><label>BPM: <span id="bpmDisplay" style="color:var(--sec)">74</span></label><input type="range" id="m_bpm" class="master-range" min="40" max="200" step="1" value="74"></div>
+        <input type="file" id="fileInput" hidden accept="audio/*" onchange="handleFileUpload(this)">
+    </div>
+
+    <div id="grid"></div>
+
+    <div class="section-title">Patterns</div>
+    <div class="mem-grid" id="patternGrid"></div>
+
+    <button id="playBtn" onclick="togglePlay()">START</button>
+
+    <div class="section-title">Memory</div>
+    <div class="mem-grid" id="patchGrid"></div>
+    <div style="display:flex; gap:10px; margin-bottom:50px; margin-top:10px;">
+        <button class="mem-btn" style="flex:1; border-color:var(--acc); color:var(--acc);" onclick="saveToDisk()">SAVE</button>
+        <button class="mem-btn" style="flex:1; border-color:var(--sec); color:var(--sec);" onclick="loadFromDisk()">LOAD</button>
+    </div>
+</div>
+
+<script>
+    // Registrazione Service Worker per PWA
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(err => console.log("SW error:", err));
+    }
+
+    let audioCtx, mainBus, delayNode, delayFB, dHPF, filterNode, crushNode, reverbNode;
+    let isPlaying = false, currentStep = 0, nextTime = 0, timerID;
+    let selectedTrack = 0, activePattern = 0, activePatch = 0;
+    let sampleBuffers = Array(8).fill(null);
+    const labels = ["KICK", "SNARE", "CH", "OH", "CLAP", "PERC", "BASS", "VOX"];
+    
+    let state = { 
+        currentBpm: 74, 
+        currentParams: Array(8).fill().map(() => ({ vol: 1, pitch: 1, dly: 0, dlyTime: 16, rev: 0 })), 
+        currentPatterns: Array(10).fill().map(() => ({ steps: Array(8).fill().map(() => Array(16).fill(false)) })) 
+    };
+
+    function initAudio() {
+        if (audioCtx) return;
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        mainBus = audioCtx.createGain();
+        
+        filterNode = audioCtx.createBiquadFilter(); filterNode.type = "lowpass"; filterNode.frequency.value = 20000;
+        crushNode = audioCtx.createWaveShaper();
+        
+        delayNode = audioCtx.createDelay(2.0);
+        delayFB = audioCtx.createGain(); delayFB.gain.value = 0;
+        dHPF = audioCtx.createBiquadFilter(); dHPF.type = "highpass"; dHPF.frequency.value = 400;
+
+        reverbNode = audioCtx.createConvolver();
+        createImpulse();
+
+        delayNode.connect(dHPF); dHPF.connect(delayFB); delayFB.connect(delayNode); delayNode.connect(mainBus);
+        reverbNode.connect(mainBus);
+        mainBus.connect(filterNode); filterNode.connect(crushNode); crushNode.connect(audioCtx.destination);
+    }
+
+    function createImpulse() {
+        const length = audioCtx.sampleRate * 2;
+        const impulse = audioCtx.createBuffer(2, length, audioCtx.sampleRate);
+        for (let c = 0; c < 2; c++) {
+            const data = impulse.getChannelData(c);
+            for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2.5);
+        }
+        reverbNode.buffer = impulse;
+    }
+
+    function updateDelay() { 
+        if (delayNode) { 
+            const p = state.currentParams[selectedTrack];
+            const beatTime = 60 / state.currentBpm;
+            const time = beatTime * (4 / p.dlyTime);
+            delayNode.delayTime.setTargetAtTime(time, audioCtx.currentTime, 0.1); 
+        } 
+    }
+
+    function trigger(idx, time) {
+        if (!sampleBuffers[idx]) return;
+        const p = state.currentParams[idx];
+        const src = audioCtx.createBufferSource(); src.buffer = sampleBuffers[idx]; src.playbackRate.setValueAtTime(p.pitch, time);
+        const g = audioCtx.createGain(); g.gain.setValueAtTime(p.vol, time);
+        
+        if (p.rev > 0) {
+            const rs = audioCtx.createGain(); rs.gain.value = p.rev;
+            g.connect(rs); rs.connect(reverbNode);
+        }
+        if (p.dly > 0) {
+            const ds = audioCtx.createGain(); ds.gain.value = 0.5;
+            delayFB.gain.setTargetAtTime(p.dly, time, 0.05);
+            g.connect(ds); ds.connect(delayNode);
+        }
+        
+        src.connect(g); g.connect(mainBus);
+        src.start(time);
+    }
+
+    async function handleFileUpload(input) { 
+        initAudio(); 
+        const file = input.files[0]; 
+        if (!file) return; 
+        const ab = await file.arrayBuffer(); 
+        sampleBuffers[selectedTrack] = await audioCtx.decodeAudioData(ab); 
+        render(); 
+    }
+
+    function render() {
+        const grid = document.getElementById('grid'); grid.innerHTML = '';
+        state.currentPatterns[activePattern].steps.forEach((tr, i) => {
+            const row = document.createElement('div'); row.className = 'track-row';
+            const lbl = document.createElement('div'); lbl.className = `track-label ${i === selectedTrack ? 'selected' : ''}`;
+            lbl.innerText = sampleBuffers[i] ? "● " + labels[i] : labels[i];
+            lbl.onclick = () => { selectedTrack = i; document.getElementById('targetTrack').innerText = labels[i]; updateUI(); render(); };
+            const stp = document.createElement('div'); stp.className = 'steps';
+            tr.forEach((s, si) => { 
+                const cb = document.createElement('input'); cb.type = 'checkbox'; cb.className = `step s-${si}`; cb.checked = s; 
+                cb.onchange = () => { state.currentPatterns[activePattern].steps[i][si] = cb.checked; }; 
+                stp.appendChild(cb); 
+            });
+            row.appendChild(lbl); row.appendChild(stp); grid.appendChild(row);
+        });
+    }
+
+    function updateUI() { 
+        const p = state.currentParams[selectedTrack]; 
+        document.getElementById('m_vol').value = p.vol; 
+        document.getElementById('m_pitch').value = p.pitch; 
+        document.getElementById('m_dly').value = p.dly; 
+        document.getElementById('m_rev').value = p.rev;
+        document.getElementById('m_dly_time').value = p.dlyTime;
+        updateDelay();
+    }
+
+    function scheduler() { 
+        while (nextTime < audioCtx.currentTime + 0.1) { 
+            state.currentPatterns[activePattern].steps.forEach((tr, i) => { if(tr[currentStep]) trigger(i, nextTime); }); 
+            const stepIdx = currentStep;
+            setTimeout(() => {
+                document.querySelectorAll('.step').forEach(e => e.classList.remove('playing')); 
+                document.querySelectorAll(`.s-${stepIdx}`).forEach(e => e.classList.add('playing')); 
+            }, 0);
+            nextTime += (60 / state.currentBpm) / 4; 
+            currentStep = (currentStep + 1) % 16; 
+        } 
+        timerID = setTimeout(scheduler, 25); 
+    }
+
+    function togglePlay() { 
+        initAudio(); 
+        if (audioCtx.state === 'suspended') audioCtx.resume(); 
+        isPlaying = !isPlaying; 
+        document.getElementById('playBtn').classList.toggle('active', isPlaying); 
+        document.getElementById('playBtn').innerText = isPlaying ? "STOP" : "START"; 
+        if(isPlaying) { currentStep = 0; nextTime = audioCtx.currentTime; scheduler(); } 
+        else { clearTimeout(timerID); } 
+    }
+
+    document.getElementById('m_bpm').oninput = (e) => { 
+        state.currentBpm = parseInt(e.target.value); 
+        document.getElementById('bpmDisplay').innerText = state.currentBpm; 
+        updateDelay(); 
+    };
+    
+    document.getElementById('m_rev').oninput = (e) => { state.currentParams[selectedTrack].rev = parseFloat(e.target.value); };
+    document.getElementById('m_dly_time').onchange = (e) => { state.currentParams[selectedTrack].dlyTime = parseInt(e.target.value); updateDelay(); };
+
+    document.getElementById('fx_cutoff').oninput = (e) => { filterNode.frequency.setTargetAtTime(Math.pow(e.target.value, 2) * 19500 + 50, audioCtx.currentTime, 0.05); };
+    document.getElementById('fx_crush').oninput = (e) => { 
+        const val = parseFloat(e.target.value) * 50; 
+        if(val === 0) { crushNode.curve = null; return; } 
+        const n = 44100; const curve = new Float32Array(n); 
+        for (let i = 0; i < n; ++i) { let x = i * 2 / n - 1; curve[i] = (Math.PI + val) * x / (Math.PI + val * Math.abs(x)); } 
+        crushNode.curve = curve; 
+    };
+
+    function saveToDisk() { 
+        localStorage.setItem(`mtx_v32_${activePatch}`, JSON.stringify(state)); 
+        const s = document.getElementById('status');
+        s.innerText = "SAVED"; setTimeout(() => s.innerText = "MADE BY NORELESI", 2000);
+    }
+    
+    function loadFromDisk() { 
+        const sData = localStorage.getItem(`mtx_v32_${activePatch}`); 
+        if(sData) { 
+            state = JSON.parse(sData); updateUI(); render(); 
+            const s = document.getElementById('status');
+            s.innerText = "LOADED"; setTimeout(() => s.innerText = "MADE BY NORELESI", 2000);
+        }
+    }
+
+    for(let i=0; i<10; i++) {
+        const b1 = document.createElement('button'); b1.className = `mem-btn ptn-btn ${i===0?'ptn-active':''}`; b1.innerText = "P" + (i+1); 
+        b1.onclick = () => { activePattern = i; document.querySelectorAll('.ptn-btn').forEach((x,idx)=>x.classList.toggle('ptn-active',idx===i)); render(); }; 
+        document.getElementById('patternGrid').appendChild(b1);
+        
+        const b2 = document.createElement('button'); b2.className = `mem-btn patch-btn ${i===0?'patch-active':''}`; b2.innerText = i+1; 
+        b2.onclick = () => { activePatch = i; document.querySelectorAll('.patch-btn').forEach((x,idx)=>x.classList.toggle('patch-active',idx===i)); }; 
+        document.getElementById('patchGrid').appendChild(b2);
+    }
+
+    ['vol', 'pitch', 'dly'].forEach(id => { 
+        document.getElementById(`m_${id}`).oninput = (e) => { 
+            state.currentParams[selectedTrack][id] = parseFloat(e.target.value); 
+        }; 
+    });
+
+    render();
+</script>
+</body>
+</html>
