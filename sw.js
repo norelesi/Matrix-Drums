@@ -1,4 +1,4 @@
-const CACHE_NAME = 'matrix-drums-v1';
+const CACHE_NAME = 'matrix-drums-v1.1';
 const ASSETS = [
   './',
   './index.html',
