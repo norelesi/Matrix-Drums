@@ -2,7 +2,7 @@
   "name": "Matrix Drums FX Pro",
   "short_name": "Matrix Drums",
   "description": "Sampling Drum Machine",
-  "start_url": "./index.html?v=1.1",
+  "start_url": "./index.html?v=1.2",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#050505",
